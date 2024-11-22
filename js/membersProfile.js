@@ -1,7 +1,7 @@
 let membersData = [];
 
 // Fetch Congress members data from the API endpoint
-fetch("http://localhost:5001/api/congress_members")
+fetch("https://backend-server-304538040372.us-central1.run.app/api/congress_members")
     .then(response => response.json())
     .then(data => {
         // Store data in the 'membersData' global variable
@@ -19,15 +19,17 @@ function showModalForState(state, district = null) {
         return;
     }
 
+    tabContainer.innerHTML = '';
+
     // Reset the content when no state is selected
     if (!state) {
         // Default content when no state is selected
         showTab('general');
         return;
     }
+
     // Log the state and district for debugging
-    console.log("State:", state);
-    console.log("District:", district);
+    console.log("State:", state, "District:", district);
     
     // Ensure members data is loaded
     if (!window.membersData || window.membersData.length === 0) {
@@ -38,6 +40,7 @@ function showModalForState(state, district = null) {
         console.error("Congress members data is not loaded.");
         return;
     }
+
     // Debug: Log all members data
     console.log("All members data:", window.membersData);
 
@@ -68,49 +71,33 @@ function showModalForState(state, district = null) {
     // Set title based on state and district
     const title = district
         ? `Representative for ${state}, District ${districtNumber}`
-        : `Senators from ${state}`;
+        : `Senators`;
     tabContainer.innerHTML = `<h2>${title}</h2>`;
 
-    // Render profiles
-    if (filteredMembers.length > 0) {
-        filteredMembers.forEach(member => {
-            const profileDiv = createMemberProfile(member);
-            tabContainer.appendChild(profileDiv);
-        });
-    } else {
-        tabContainer.innerHTML += "<p>No members found for this state and district.</p>";
-    }
-}
-
-function createMemberProfile(member) {
-    const profileDiv = document.createElement("div");
-    profileDiv.classList.add("member-profile");
-
-    // Add profile image
-    const img = document.createElement("img");
-    img.classList.add("profile-image");
-    img.src = member.imageUrl;
-    img.alt = `${member.name}'s profile image`;
-
-    // Add member details
-    const infoDiv = document.createElement("div");
-    infoDiv.classList.add("member-info");
-    infoDiv.innerHTML = `
-        <strong>Name: ${member.name}</strong>
-        Party: ${member.partyName}<br>
-        Chamber: ${member.chamber}<br>
-        ${
-            member.chamber === "House of Representatives"
-                ? `District: ${parseInt(member.district, 10)}<br>`
-                : ""
-        }
-        Active: ${member.startYear} - Present<br>
-        <a href="${member.url}" target="_blank">Website</a>
+    // Generate individual member profile divs
+    const memberProfiles = filteredMembers.map(member => `
+        <div class="member-profile">
+            <img class="profile-image" src="${member.imageURL}" alt="${member.name}'s profile image">
+            <div class="member-info">
+                <strong>Name: ${member.name}</strong>
+                Party: ${member.party}<br>
+                Chamber: ${member.chamber}<br>
+                ${
+                    member.chamber === "House of Representatives"
+                        ? `District: ${parseInt(member.district, 10)}<br>`
+                        : ""
+                }
+                Active: ${member.startYear} - Present<br>
+                <a href="${member.profileURL}" target="_blank">Website</a>
+            </div>
+        </div>
+    `).join('');
+    
+    return `
+        <div class="member-profiles">
+            <h3>${district ? `Representative` : 'Senators'}</h3>
+            ${memberProfiles}
+        </div>
     `;
-
-    // Append elements to the profile div
-    profileDiv.appendChild(img);
-    profileDiv.appendChild(infoDiv);
-
-    return profileDiv;
 }
+

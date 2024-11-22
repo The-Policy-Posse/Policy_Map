@@ -8,7 +8,7 @@
     <script src="libs/d3.v7.min.js"></script>
     <script src="libs/d3-geo-projection.v2.min.js"></script>
     <script src="libs/d3-force.v3.min.js"></script>
-    <script src="libs/membersProfile.js"></script>
+    <script src="js/membersProfile.js"></script>
 </head>
 <body>
     <div class="layout-container">
@@ -286,6 +286,7 @@
                                 .style("left", (event.pageX + 10) + "px");
                         })
                         .on("mouseout", function() {
+                            const partyColors = {"R": "#ff4d4d", "D": "#4d79ff"};
                             const party = districtData.properties.PARTY;
                             const originalColor = partyColors[party] || "#ccc";
                             d3.select(this).attr("fill", originalColor);
@@ -428,17 +429,23 @@
                     content = `
                         <h2>${state} - ${district ? `District ${district}` : 'General'} Information</h2>
                         <p>Here are the ${district ? 'elected officials and general information for District ' + district : 'Senators and general information for ' + state}.</p>
-                        ${showModalForState(state, district)}`;
+                        ${showModalForState(state, district)}
+                    `;
+                    if (state) {
+                        showModalForState(state, district);
+                    }
                     break;
                 case 'network':
                     content = `
                         <h2>${state} - ${district ? `District ${district}` : 'Network'} Information</h2>
-                        ${generateNetworkInfo(state, district)}`;
+                    `;
+                    generateNetworkInfo(state, district);
                     break;
                 case 'ideology':
                     content = `
                         <h2>${state} - ${district ? `District ${district}` : 'Ideology'} Information</h2>
-                        ${generateIdeologyInfo(state, district)}`;
+                    `;
+                    generateIdeologyInfo(state, district);
                     break;
                 default: 
                     console.error(`Tab with ID '${tabID}' not found.`);
