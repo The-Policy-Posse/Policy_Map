@@ -1,0 +1,19 @@
+name: policy-map
+dependencies:
+  - python=3.11.10
+  - numpy
+  - pandas
+  - matplotlib
+  - geopandas
+  - pyproj
+  - shapely
+  - scikit-learn
+  - requests
+  - tqdm
+  - pip
+  - pip:
+      - aiohttp
+      - pyquery
+      - psycopg2
+      - beautifulsoup4
+      - requests-html

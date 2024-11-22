@@ -42,3 +42,15 @@ Ensure you have the following installed:
 2. Click on a state to zoom in and view detailed state information.
 3. Navigate between tabs in the sidebar for general, network, or ideology data.
 4. Zoom further into congressional districts to explore district-specific details.
+
+
+
+###### Dan notes 11/21 11:51 EST
+
+- Launch Conda Prompt
+- Create environment with .yml for OS of choice
+- Activate policy-map environment
+- Launch backend server /js/backendServer.js  with node backendServer.js
+- Seperate Prompt; once backend server is running
+- Run python -m http.server 8000 in conda 
+- Navigate to http://localhost:8000/congress_map.html in browser
