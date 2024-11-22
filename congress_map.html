@@ -122,7 +122,7 @@
         // Load GeoJSON data
         Promise.all([
             // Fetch US States data
-            fetch("http://localhost:5001/api/us_states")
+            fetch("https://backend-server-304538040372.us-central1.run.app/api/us_states")
                 .then(response => response.json())
                 .then(data => ({
                     type: "FeatureCollection",
@@ -139,7 +139,7 @@
                 })),
 
             // Fetch Congressional Districts data
-            fetch("http://localhost:5001/api/congressional_districts")
+            fetch("https://backend-server-304538040372.us-central1.run.app/api/congressional_districts")
                 .then(response => response.json())
                 .then(data => ({
                     type: "FeatureCollection",
