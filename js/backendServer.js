@@ -11,7 +11,7 @@ app.use(cors());
 // Database connection setup
 const pool = new Pool({
     user: 'hbodnar',
-    host: '127.0.0.1',
+    host: '/cloudsql/policy-posse-gt-v01:us-central1:policy-database-v1',
     database: 'PolicyPosse-DB',
     password: 'hiphop',
     port: 5432,
@@ -89,4 +89,7 @@ app.get("/api/congress_members", async (req, res) => {
     }
 });
 
-app.listen(5001, () => console.log('Backend server running on http://localhost:5001'));
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+    console.log(`Backend server running on http://localhost:${port}`);
+});

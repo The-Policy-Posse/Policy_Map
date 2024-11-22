@@ -4,7 +4,7 @@
   "description": "## Overview",
   "main": "backendServer.js",
   "scripts": {
-    "start": "node libs/backendServer.js"
+    "start": "node js/backendServer.js"
   },
   "dependencies": {
     "express": "^4.21.1",
