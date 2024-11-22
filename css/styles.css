@@ -1,0 +1,207 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    box-sizing: border-box;
+    
+}
+
+/* Container for the entire layout */
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    max-width: 1200px;
+    height: 70vh;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    margin: auto;
+}
+
+/* header styling */
+header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 0;
+}
+
+/* Header text alignment */
+.header-left {
+    font-size: 28px;;
+}
+
+.header-right {
+    font-size: 14px;
+    text-align: right;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* Middle container */
+.middle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ccc;
+    border-bottom: 2px solid #ccc;
+}
+
+/* Tabs styling */
+.tabs {
+    display: flex;
+    margin-right: 27%;
+    transform: translateX(-27%);
+    margin-top: 5px;
+}
+
+.tabs button {
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #e0e0e0;
+    border-radius: 4px 4px 0 0;
+    margin-right: 4px;
+}
+
+.tabs button.active {
+    background-color: #e0e0e0;
+    font-weight: bold;
+}
+
+/* Tab container styling */
+.tab-container {
+    flex-grow: 1;
+    height: 100%;
+    padding: 20px;
+    background-color: #e0e0e0;
+    color: #000;
+    overflow-y: auto;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/* Container for map and sidebar */
+.main-container {
+    display: flex;
+    height: 100%;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Map container */
+#map-container {
+    flex-basis: 50%;
+    padding-left: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    height: 100%;
+    border-right: 2px solid #ccc;
+}
+
+/* Map styling */
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar styling */
+#sidebar {
+    flex-basis: 50%;
+    height: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f8f8;
+    overflow-y: auto;
+}
+
+/* Tooltip styling */
+.tooltip{
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #000;
+    padding: 8px 12px;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 16px;
+    font-weight: bold;
+    visibility: hidden;
+    z-index: 10;
+}
+
+/* State and district styling */
+.state {
+    stroke: #fff;
+    stroke-width: 0.3px;
+} 
+
+.district {
+    stroke: #000;
+    stroke-width: 0.2px;
+    display: none;
+}
+
+.member-profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    width: 100%;
+}
+
+.profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.member-info {
+    line-height: 1.2;
+}
+
+.member-info strong {
+    font-size: 14px;
+    display: block;
+    color: #333;
+}
+
+.member-info a:hover {
+    text-decoration: underline;
+}
+
+.button-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Button styling */
+button {
+    margin-right: 10px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #e0e0e0;
+    color: #000;
+    border-radius: 4px 4px 0 0;
+    box-shadow: none;
+}

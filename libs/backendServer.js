@@ -34,7 +34,7 @@ app.get("/api/us_states", async (req, res) => {
         // Fetch states data
         console.log("Fetching states from database...");
         const client = await pool.connect();
-        const statesData = await client.query('SELECT statefp, stusps, name, state_party, ST_AsGeoJSON(ST_Simplify(geometry, 0.001)) AS geometry FROM us_states;');
+        const statesData = await client.query('SELECT statefp, stusps, name, state_party, ST_AsGeoJSON(geometry) AS geometry FROM us_states;');
         client.release();
 
         cache.set("states", statesData.rows);

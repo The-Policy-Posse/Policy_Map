@@ -4,210 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Capitol Compass US States and Congressional Districts</title>
+    <link rel="stylesheet" href="css/styles.css">
     <script src="libs/d3.v7.min.js"></script>
     <script src="libs/d3-geo-projection.v2.min.js"></script>
     <script src="libs/d3-force.v3.min.js"></script>
     <script src="libs/membersProfile.js"></script>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f0f0;
-            box-sizing: border-box;
-            
-        }
-        /* Container for the entire layout */
-        .layout-container {
-            display: flex;
-            flex-direction: column;
-            width: 80%;
-            max-width: 1200px;
-            height: 70vh;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            background-color: #ffffff;
-            margin: auto;
-        }
-        /* header styling */
-        header {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px;
-            background-color: #f5f5f5;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            border-bottom: 2px solid #ccc;
-            margin-bottom: 0;
-        }
-        /* Header text alignment */
-        .header-left {
-            font-size: 28px;;
-        }
-        .header-right {
-            font-size: 14px;
-            text-align: right;
-            color: #555;
-            line-height: 1.4;
-        }
-        /* Middle container */
-        .middle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #f5f5f5;
-            border-top: 1px solid #ccc;
-            border-bottom: 2px solid #ccc;
-        }
-        /* Tabs styling */
-        .tabs {
-            display: flex;
-            margin-right: 27%;
-            transform: translateX(-27%);
-            margin-top: 5px;
-        }
-        .tabs button {
-            padding: 4px 8px;
-            font-size: 12px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            background-color: #e0e0e0;
-            border-radius: 4px 4px 0 0;
-            margin-right: 4px;
-        }
-        .tabs button.active {
-            background-color: #e0e0e0;
-            font-weight: bold;
-        }
-        /* Tab container styling */
-        .tab-container {
-            flex-grow: 1;
-            height: 100%;
-            padding: 20px;
-            background-color: #e0e0e0;
-            color: #000;
-            overflow-y: auto;
-            box-sizing: border-box;
-            margin: 0;
-        }
-        /* Container for map and sidebar */
-        .main-container {
-            display: flex;
-            height: 100%;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-        /* Map container */
-        #map-container {
-            flex-basis: 50%;
-            padding-left: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #ffffff;
-            height: 100%;
-            border-right: 2px solid #ccc;
-        
-        }
-        /* Map styling */
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        /* Sidebar styling */
-        #sidebar {
-            flex-basis: 50%;
-            height: 100%;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            background-color: #f8f8f8;
-            overflow-y: auto;
-        }
-        /* Tooltip styling */
-        .tooltip{
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #000;
-            padding: 8px 12px;
-            border-radius: 4px;
-            pointer-events: none;
-            font-size: 16px;
-            font-weight: bold;
-            visibility: hidden;
-            z-index: 10;
-        }
-        /* State and district styling */
-        .state {
-            stroke: #fff;
-            stroke-width: 0.7px;
-        }
-        .district {
-            stroke: #000;
-            stroke-width: 0.2px;
-            display: none;
-        }
-        .state-label {
-            font-size: 18px;
-            font-weight: bold;
-            fill: #444;
-            pointer-events: none;
-        }
-       
-       .member-profile {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            width: 100%;
-        }
-        .profile-image {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 15px;
-        }
-        .member-info {
-            line-height: 1.2;
-        }
-        .member-info strong {
-            font-size: 14px;
-            display: block;
-            color: #333;
-        }
-        .member-info a {
-            color: #0073e6;
-            text-decoration: none;
-        }
-        .member-info a:hover {
-            text-decoration: underline;
-        }
-        .button-container {
-            display: flex;
-            align-items: center;
-        }
-        /* Button styling */
-        button {
-            margin-right: 10px;
-            padding: 4px 8px;
-            font-size: 12px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            background-color: #e0e0e0;
-            color: #000;
-            border-radius: 4px 4px 0 0;
-            box-shadow: none;
-        }
-        
-            
-    </style>
 </head>
 <body>
     <div class="layout-container">
@@ -221,7 +22,7 @@
         <!-- Top section with back button and tabs -->
         <div class="middle-container">
             <div class="button-container">
-                <button id="backToNationalView" onclick="reset()" style="display: none;" aria-label="Back to National View">
+                <button id="backToNationalView" onclick="resetView()" style="display: none;" aria-label="Back to National View">
                      <- Back to National View
                 </button>
                 <button id="backToStateView" onclick="backToStateView()" style="display: none;" aria-label="Back to State View">
@@ -269,6 +70,10 @@
             .scaleExtent([1, 8])
             .on("zoom", zoomed);
 
+        // Tooltip setup
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip");
+
         // Define global variables
         let stateBounds = null;
         let stateZoomLevel = null;
@@ -296,9 +101,23 @@
 
         // Append group to hold map elements
         const g = svg.append("g");
-        // Create <defs> for curved text paths
-        const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip");
+
+        // Function to update dimensions and re-project paths
+        function updateDimensions() {
+            containerWidth = document.getElementById("map-container").clientWidth;
+            containerHeight = document.getElementById("map-container").clientHeight;
+            projection
+                .scale([Math.min(containerWidth, containerHeight) * 1.2])
+                .translate([containerWidth / 2, containerHeight / 2]);
+            svg.attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
+            g.selectAll("path").attr("d", path);
+        }
+
+        // Initialize dimensions
+        updateDimensions();
+
+        // Handle window resizing
+        window.addEventListener("resize", updateDimensions);
 
         // Load GeoJSON data
         Promise.all([
@@ -314,7 +133,7 @@
                             NAME: state.name,
                             STUSPS: state.stusps,
                             STATEFP: state.statefp,
-                            STATE_PARTY: state.party
+                            STATE_PARTY: state.state_party
                         },
                     })),
                 })),
@@ -340,6 +159,7 @@
                     })),
                 })),
         ]).then(([states, districts]) => {
+            console.log("States data:", states);
             initMap(states, districts);
         }).catch(error => {
             console.error("Error loading GeoJSON data:", error);
@@ -352,6 +172,15 @@
                 "R": "#ff4d4d",
                 "D": "#4d79ff",
             };
+
+            const bounds = path.bounds(states.features.find(d => d.properties.NAME === "Kentucky"));
+            console.log("Kentucky bounds:", bounds);
+            console.log("SVG viewBox:", svg.attr("viewBox"));
+
+            const kentuckyPath = path(states.features.find(d => d.properties.NAME === "Kentucky"));
+            console.log("Kentucky path:", kentuckyPath);
+
+
             // Draw states
             const statePaths = g.selectAll(".state")
                 .data(states.features)
@@ -398,11 +227,14 @@
                     console.log("District Clicked:", d.properties.NAME);
                     districtClicked(event, d, d.properties.NAME);
                 })
-                .on("mouseover", function() {
-                    d3.select(this).attr("fill", "#2c7fb8");
+                .on("mouseover", function(event, d) {
+                    const baseColor = d3.select(this).style("fill");
+                    const hoverColor = darkenColor(baseColor, -70);
+                    d3.select(this).attr("fill", hoverColor);
                 })
-                .on("mouseout", function() {
-                    d3.select(this).attr("fill", "#69b3a2");
+                .on("mouseout", function(event, d) {
+                    const originalColor = d3.select(this).style("fill");
+                    d3.select(this).attr("fill", originalColor);
                 });
         }
 
@@ -429,21 +261,8 @@
                 d3.pointer(event, svg.node())
             );
 
-            // Show the "Back to National View" button
-            document.getElementById("backToNationalView").style.display = "block";
-            document.getElementById("backToStateView").style.display = "none";
-
-            // Show state senators in the sidebar
-            const generalContent = showModalForState(lastSelectedState);
-            document.getElementById("general-container").innerHTML = generalContent;
-
-            // Show network info for state
-            const networkContent = generateNetworkInfo(lastSelectedState);
-            document.getElementById("network-container").innerHTML = networkContent;
-
-            // Show ideology info for state
-            const ideologyContent = generateIdeologyInfo(lastSelectedState);
-            document.getElementById("ideology-container").innerHTML = ideologyContent;
+            updateButtonVisibility(true, false);
+            updateTabContent(lastSelectedState);
 
             //  Display districts for the selected state
             g.selectAll(".district")
@@ -456,8 +275,8 @@
                         .on("mouseover", function() {
                             d3.select(this).attr("fill", "#2c7fb8");
                             const officeID = districtData.properties.OFFICE_ID;
-                            const stateAbbr = officeID.slice(0, 2);
                             const repName = districtData.properties.LISTING_NAME;
+                            const stateAbbr = officeID.slice(0, 2);
                             const districtNumber = officeID.slice(2);
                             tooltip.style("visibility", "visible")
                                 .html(`Rep. ${repName}<br>${stateAbbr}-${districtNumber}`);
@@ -467,10 +286,6 @@
                                 .style("left", (event.pageX + 10) + "px");
                         })
                         .on("mouseout", function() {
-                            const partyColors = {
-                                "R": "#ff4d4d",
-                                "D": "#4d79ff",
-                            };
                             const party = districtData.properties.PARTY;
                             const originalColor = partyColors[party] || "#ccc";
                             d3.select(this).attr("fill", originalColor);
@@ -502,17 +317,7 @@
             const districtNumber = d.properties.DISTRICT;
             lastSelectedDistrict = districtNumber;
             
-            // Update "General" tab
-            const generalContent = showModalForState(lastSelectedState, lastSelectedDistrict);
-            document.getElementById("general-container").innerHTML = generalContent;
-
-            // Update "Network" tab
-            const networkContent = generateNetworkInfo(lastSelectedState);
-            document.getElementById("network-container").innerHTML = networkContent;
-
-            // Update "Ideology" tab
-            const ideologyContent = generateIdeologyInfo(lastSelectedState);
-            document.getElementById("ideology-container").innerHTML = ideologyContent;
+            updateTabContent(lastSelectedState, lastSelectedDistrict);
 
             // Calculate bounding box of the clicked district
             const [[x0, y0], [x1, y1]] = path.bounds(d);
@@ -533,9 +338,7 @@
             districtElement.attr("fill", darkerColor);
 
             // Update button visibility
-            document.getElementById("backToNationalView").style.display = "none";
-            document.getElementById("backToStateView").style.display = "block";
-            // Show general tab by default and update tab content
+            updateButtonVisibility(false, true);
             showTab('general');
         }
 
@@ -547,20 +350,11 @@
         }
 
         // Function to reset zoom
-        function reset() {
-            svg.transition().duration(750).call(
-                zoom.transform,
-                d3.zoomIdentity,
-            );
-            // Hide all districts
-            g.selectAll(".district")
-                .style("display", "none");
-            // Clear member profiles when zooming out
+        function resetView() {
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+            g.selectAll(".district").style("display", "none");
             resetTabs();
-            // Hide the "Back to National View" button
-            document.getElementById("backToNationalView").style.display = "none";
-            // Hide the "Back to State View" button
-            document.getElementById("backToStateView").style.display = "none";
+            updateButtonVisibility(false, false);
         }
 
         // Function to go back to state view
@@ -582,21 +376,9 @@
                 .style("display", district => district.properties.STATEFP20 === lastSelectedStateFP ? "block" : "none");
 
             // Update tabs to reflect state-level data
-            const generalContent = showModalForState(lastSelectedState);
-            document.getElementById("general-container").innerHTML = generalContent;
-
-            const networkContent = generateNetworkInfo(lastSelectedState);
-            document.getElementById("network-container").innerHTML = networkContent;
-
-            const ideologyContent = generateIdeologyInfo(lastSelectedState);
-            document.getElementById("ideology-container").innerHTML = ideologyContent;
-            
-            // Show the "General" tab by default
+            updateTabContent(lastSelectedState);
             showTab('general');
-
-            // Update button visibility
-            document.getElementById("backToNationalView").style.display = "block";
-            document.getElementById("backToStateView").style.display = "none";
+            updateButtonVisibility(true, false);
         }
 
         // Function to show tab content
@@ -613,55 +395,9 @@
 
                 // Dynamically update content based on the current view level
                 if (currentViewLevel === "state" && lastSelectedState) {
-                    switch (tabID) {
-                        case 'general':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - General Information</h2>
-                                <p>Here are the Senators and general information for ${lastSelectedState}.</p>
-                                ${showModalForState(lastSelectedState)}`;
-                            break;
-
-                        case 'network':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - Network Information</h2>
-                                <p>Explore the network of congressional districts in ${lastSelectedState}.</p>
-                                ${generateNetworkInfo(lastSelectedState)}`;
-                            break;
-
-                        case 'ideology':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - Ideology Information</h2>
-                                <p>Explore the ideology distribution of elected officials in ${lastSelectedState}.</p>
-                                ${generateIdeologyInfo(lastSelectedState)}`;
-                            break;
-
-                        default:
-                            console.error(`Tab with ID '${tabID}' not found.`);
-                    }
+                    tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState);
                 } else if (currentViewLevel === "district" && lastSelectedState && lastSelectedDistrict) {
-                    switch (tabID) {
-                        case 'general':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - District ${lastSelectedDistrict} Information</h2>
-                                <p>Here are the elected officials and general information for District ${lastSelectedDistrict}.</p>
-                                ${showModalForState(lastSelectedState, lastSelectedDistrict)}`;
-                            break;
-                        case 'network':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - District ${lastSelectedDistrict} Network Information</h2>
-                                <p>Explore the network of elected officials in District ${lastSelectedDistrict}.</p>
-                                ${generateNetworkInfo(lastSelectedState)}`;
-                            break;
-                        case 'ideology':
-                            tabContainer.innerHTML = `
-                                <h2>${lastSelectedState} - District ${lastSelectedDistrict} Ideology Information</h2>
-                                <p>Explore the ideology distribution of elected officials in District ${lastSelectedDistrict}.</p>
-                                ${generateIdeologyInfo(lastSelectedState)}`;
-                            break;
-
-                        default:
-                            console.error(`Tab with ID '${tabID}' not found.`);
-                    }
+                    tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState, lastSelectedDistrict);
                 } else {
                     // Default content for when no state or district is selected
                     tabContainer.innerHTML = `
@@ -685,16 +421,41 @@
             }
         }
 
+        function generateTabContent(tabID, state, district = null) {
+            let content = '';
+            switch (tabID) {
+                case 'general':
+                    content = `
+                        <h2>${state} - ${district ? `District ${district}` : 'General'} Information</h2>
+                        <p>Here are the ${district ? 'elected officials and general information for District ' + district : 'Senators and general information for ' + state}.</p>
+                        ${showModalForState(state, district)}`;
+                    break;
+                case 'network':
+                    content = `
+                        <h2>${state} - ${district ? `District ${district}` : 'Network'} Information</h2>
+                        ${generateNetworkInfo(state, district)}`;
+                    break;
+                case 'ideology':
+                    content = `
+                        <h2>${state} - ${district ? `District ${district}` : 'Ideology'} Information</h2>
+                        ${generateIdeologyInfo(state, district)}`;
+                    break;
+                default: 
+                    console.error(`Tab with ID '${tabID}' not found.`);
+            }
+            return content;
+        }
+
         // Function to get network information
-        function generateNetworkInfo(stateName) {
+        function generateNetworkInfo(stateName, districtNum = null) {
             // Mock network information
-            return `<p>Network information for ${stateName} will be displayed here.</p>`;
+            return `<p>Network information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
         }
 
         // Function to get ideology information
-        function generateIdeologyInfo(stateName) {
+        function generateIdeologyInfo(stateName, districtNum = null) {
             // Mock ideology information
-            return `<p>Ideology information for ${stateName} will be displayed here.</p>`;
+            return `<p>Ideology information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
         }
 
         // Function to reset tabs
@@ -724,10 +485,18 @@
 
             // Show the "General" tab by default
             showTab('general');
+            updateButtonVisibility(false, false);
+        }
 
-            // Hide the "Back to National View" and "Back to State View" buttons
-            document.getElementById("backToNationalView").style.display = "none";
-            document.getElementById("backToStateView").style.display = "none";
+        function updateTabContent(state, district = null) {
+            document.getElementById("general-container").innerHTML = showModalForState(state, district);
+            document.getElementById("network-container").innerHTML = generateNetworkInfo(state);
+            document.getElementById("ideology-container").innerHTML = generateIdeologyInfo(state);
+        }
+
+        function updateButtonVisibility(showBackToNational, showBackToState) {
+            document.getElementById("backToNationalView").style.display = showBackToNational ? "block" : "none";
+            document.getElementById("backToStateView").style.display = showBackToState ? "block" : "none"; 
         }
     </script>
 </body>
