@@ -77,7 +77,7 @@ app.get("/api/congress_members", async (req, res) => {
         }
         const client = await pool.connect();
         const membersData = await client.query(
-            'SELECT * FROM congress_members_info;'
+            'SELECT * FROM congress_members;'
         )
         client.release();
 
