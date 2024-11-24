@@ -56,8 +56,18 @@
                 
                 <!-- Ideology tab container -->
                 <div id="ideology-container" class="tab-container" style="display: none;">
-                    <h2>Ideology</h2>
-                    <p>Ideology information will be displayed here.</p>
+                    <div class="chart-container">
+                        <h2 class="chart-title">Ideology Distribution by State</h2>
+                        <div class="controls">
+                            <label for="topic-select">Select Topic: </label>
+                            <select id="topic-select">
+                                <option value="">--Select a Topic--</option>
+                            </select>
+                        </div>
+                        <svg id="ideology-bar-chart"></svg>
+                    </div>
+                    <!-- Tooltip Div -->
+                    <div class="tooltip"></div>
                 </div>
             </div>
         </div>
@@ -388,7 +398,9 @@
                 tabContainer.style.display = 'block';
 
                 // Dynamically update content based on the current view level
-                if (currentViewLevel === "state" && lastSelectedState) {
+                if (tabID === 'ideology') {
+                    setTimeout(() => initializeIdeologyChart(), 0);
+                } else if (currentViewLevel === "state" && lastSelectedState) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState);
                 } else if (currentViewLevel === "district" && lastSelectedState && lastSelectedDistrict) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState, lastSelectedDistrict);
@@ -478,10 +490,7 @@
             `;
 
             // Reset Ideology tab content
-            document.getElementById("ideology-container").innerHTML = `
-                <h2>Ideology</h2>
-                <p>Ideology information will be displayed here.</p>
-            `;
+            setTimeout(() => initializeIdeologyChart(), 0);
 
             // Show the "General" tab by default
             showTab('general');
@@ -491,12 +500,277 @@
         function updateTabContent(state, district = null) {
             document.getElementById("general-container").innerHTML = showModalForState(state, district);
             document.getElementById("network-container").innerHTML = generateNetworkInfo(state);
-            document.getElementById("ideology-container").innerHTML = generateIdeologyInfo(state);
+            setTimeout(() => initializeIdeologyChart(), 0);
         }
 
         function updateButtonVisibility(showBackToNational, showBackToState) {
             document.getElementById("backToNationalView").style.display = showBackToNational ? "block" : "none";
             document.getElementById("backToStateView").style.display = showBackToState ? "block" : "none"; 
+        }
+
+        ///////////////////////////////////////////////////////////
+        ///////// Dan Test Chart /////////////////////
+        ///////////////////////////////////////////////////////////
+
+
+        // Function to initialize the D3 chart in the Ideology tab
+        function initializeIdeologyChart() {
+            // Check if the chart has already been initialized to avoid re-initializing
+            if (!initializeIdeologyChart.initialized) {
+                initializeIdeologyChart.initialized = true; // Set a flag to prevent re-initialization
+
+                /////// D3 chart code /////////
+
+                // Set dimensions and margins
+                const container = d3.select("#ideology-bar-chart").node().parentNode;
+                const containerWidth = container.getBoundingClientRect().width;
+                const containerHeight = 600;
+
+                const margin = { top: 50, right: 30, bottom: 150, left: 60 },
+                      width = containerWidth - margin.left - margin.right,
+                      height = containerHeight - margin.top - margin.bottom;
+
+                // Append SVG object to the container
+                const svg = d3.select("#ideology-bar-chart")
+                    .attr("width", containerWidth)
+                    .attr("height", containerHeight)
+                    .html('') // Clear any existing content
+                  .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                // Create tooltip
+                const tooltip = d3.select(".tooltip");
+
+                // Variables to store data and topics
+                let allData = [];
+                let topicsList = [];
+
+                // Define a color scale
+                const color = d3.scaleOrdinal()
+                    .range(d3.schemeCategory10);
+
+                // Load the CSV data
+                d3.csv("combined_data.csv").then(data => {
+                    
+                    // Process the data
+                    allData = processData(data);
+                    
+                    // Extract unique topics
+                    const topics = Array.from(new Set(allData.flatMap(d => d.topics)));
+                    topicsList = topics; // Store for potential future use
+
+                    // Populate the dropdown
+                    populateDropdown(topics);
+
+                    // Initialize scales and axes
+                    initializeChart();
+
+                    // Event listener for dropdown
+                    d3.select("#topic-select").on("change", function() {
+                        const selectedTopic = this.value;
+                        if (selectedTopic === "") {
+                            updateChart([]);
+                        } else {
+                            const filteredData = getDataForTopic(allData, selectedTopic);
+                            updateChart(filteredData);
+                        }
+                    });
+                }).catch(error => {
+                    console.error("Error loading the CSV data:", error);
+                    svg.append("text")
+                        .attr("x", width / 2)
+                        .attr("y", height / 2)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "red")
+                        .text("Failed to load data.");
+                });
+
+                /**
+                 * Processes the raw CSV data to aggregate counts per state and topic.
+                 * @param {Array} data - The raw CSV data.
+                 * @returns {Array} - Processed data with state and topics.
+                 */
+                function processData(data) {
+                    return data.map(d => {
+                        // Parse the assigned_label string into an array
+                        const topics = JSON.parse(d.assigned_label.replace(/'/g, '"'));
+                        return {
+                            state: d.state, // Ensure your CSV has a 'state' column
+                            topics: topics
+                        };
+                    });
+                }
+
+                /**
+                 * Populates the topic selection dropdown.
+                 * @param {Array} topics - The list of unique topics.
+                 */
+                function populateDropdown(topics) {
+                    const dropdown = d3.select("#topic-select");
+                    dropdown.selectAll('option').remove(); // Clear existing options
+                    dropdown.append("option")
+                        .attr("value", "")
+                        .text("--Select a Topic--");
+                    topics.forEach(topic => {
+                        dropdown.append("option")
+                            .attr("value", topic)
+                            .text(capitalize(topic));
+                    });
+                }
+
+                /**
+                 * Initializes the chart by setting up scales, axes, and initial empty bars.
+                 */
+                function initializeChart() {
+                    // X scale: States (categorical)
+                    svg.append("g")
+                        .attr("class", "x-axis")
+                        .attr("transform", `translate(0, ${height})`);
+
+                    // Y scale: Counts (linear)
+                    svg.append("g")
+                        .attr("class", "y-axis");
+
+                    // Axis labels
+                    // Y axis label
+                    svg.append("text")
+                        .attr("class", "axis-label")
+                        .attr("transform", "rotate(-90)")
+                        .attr("x", -height / 2)
+                        .attr("y", -margin.left + 15)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "black")
+                        .text("Count");
+
+                    // X axis label
+                    svg.append("text")
+                        .attr("class", "axis-label")
+                        .attr("x", width / 2)
+                        .attr("y", height + margin.bottom - 40)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "black")
+                        .text("State");
+                }
+
+                /**
+                 * Retrieves the aggregated data for a specific topic.
+                 * @param {Array} data - The processed data.
+                 * @param {string} topic - The selected topic.
+                 * @returns {Array} - Aggregated data for the topic.
+                 */
+                function getDataForTopic(data, topic) {
+                    const counts = d3.rollups(
+                        data,
+                        v => v.filter(d => d.topics.includes(topic)).length,
+                        d => d.state
+                    );
+
+                    // Convert to array of objects
+                    return counts.map(([state, count]) => ({ state, count }));
+                }
+
+                /**
+                 * Updates the bar chart with new data, applying smooth transitions.
+                 * @param {Array} data - The aggregated data to display.
+                 */
+                function updateChart(data) {
+                    if (data.length === 0) {
+                        // If no topic is selected, clear the chart
+                        svg.selectAll(".bar").remove();
+                        svg.select(".y-axis").transition().duration(750).call(d3.axisLeft(d3.scaleLinear().range([height, 0])));
+                        svg.select(".x-axis").transition().duration(750).call(d3.axisBottom(d3.scaleBand().range([0, width]).padding(0.2)));
+                        return;
+                    }
+
+                    // Sort data descending to order bars from highest to lowest
+                    data.sort((a, b) => b.count - a.count);
+
+                    // Update the X scale domain based on sorted data
+                    const x = d3.scaleBand()
+                        .domain(data.map(d => d.state))
+                        .range([0, width])
+                        .padding(0.2);
+
+                    // Update the Y scale domain based on the new data
+                    const y = d3.scaleLinear()
+                        .domain([0, d3.max(data, d => d.count) + 5])
+                        .range([height, 0]);
+
+                    // Update the X axis with transition
+                    svg.select(".x-axis")
+                        .transition()
+                        .duration(750)
+                        .call(d3.axisBottom(x))
+                      .selectAll("text")
+                        .attr("transform", "rotate(-45)")
+                        .style("text-anchor", "end");
+
+                    // Update the Y axis with transition
+                    svg.select(".y-axis")
+                        .transition()
+                        .duration(750)
+                        .call(d3.axisLeft(y));
+
+                    // Bind the new data to the bars
+                    const bars = svg.selectAll(".bar")
+                        .data(data, d => d.state);
+
+                    // Handle entering bars
+                    bars.enter()
+                        .append("rect")
+                        .attr("class", "bar")
+                        .attr("x", d => x(d.state))
+                        .attr("width", x.bandwidth())
+                        .attr("y", y(0)) // Start from y=0
+                        .attr("height", 0) // Start with height=0
+                        .attr("fill", d => d3.schemeCategory10[d.state.charCodeAt(0) % 10]) // Assign color
+                        .on("mouseover", function(event, d) {
+                            d3.select(this).attr("fill", "#ff9933");
+                            tooltip.style("opacity", 1)
+                                   .html(`<strong>${d.state}</strong><br>Count: ${d.count}`)
+                                   .style("left", (event.pageX + 10) + "px")
+                                   .style("top", (event.pageY - 28) + "px");
+                        })
+                        .on("mousemove", function(event) {
+                            tooltip.style("left", (event.pageX + 10) + "px")
+                                   .style("top", (event.pageY - 28) + "px");
+                        })
+                        .on("mouseout", function(event, d) {
+                            d3.select(this).attr("fill", d3.schemeCategory10[d.state.charCodeAt(0) % 10]);
+                            tooltip.style("opacity", 0);
+                        })
+                        .transition()
+                        .duration(750)
+                            .attr("y", d => y(d.count))
+                            .attr("height", d => height - y(d.count));
+
+                    // Update existing bars
+                    bars.transition()
+                        .duration(750)
+                        .attr("x", d => x(d.state))
+                        .attr("width", x.bandwidth())
+                        .attr("y", d => y(d.count))
+                        .attr("height", d => height - y(d.count))
+                        .attr("fill", d => d3.schemeCategory10[d.state.charCodeAt(0) % 10]);
+
+                    // Handle exiting bars
+                    bars.exit()
+                        .transition()
+                        .duration(750)
+                            .attr("y", y(0))
+                            .attr("height", 0)
+                            .remove();
+                }
+
+                /**
+                 * Capitalizes the first letter of a string.
+                 * @param {string} str - The input string.
+                 * @returns {string} - The capitalized string.
+                 */
+                function capitalize(str) {
+                    return str.charAt(0).toUpperCase() + str.slice(1);
+                }
+            }
         }
     </script>
 </body>
