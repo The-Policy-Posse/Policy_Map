@@ -8,7 +8,7 @@
     <script src="libs/d3.v7.min.js"></script>
     <script src="libs/d3-geo-projection.v2.min.js"></script>
     <script src="libs/d3-force.v3.min.js"></script>
-    <script src="libs/membersProfile.js"></script>
+    <script src="js/membersProfile.js"></script>
 </head>
 <body>
     <div class="layout-container">
@@ -426,18 +426,6 @@
             }
         }
 
-            // Update the active tab button
-            document.querySelectorAll('.tabs button').forEach(button => {
-                button.classList.remove('active'); // Remove active class from all buttons
-            });
-
-            const activeButton = document.querySelector(`.tabs button[onclick="showTab('${tabID}')"]`);
-            if (activeButton) {
-                activeButton.classList.add('active'); // Add active class to the selected button
-            } else {
-                console.error(`Tab button for '${tabID}' not found.`);
-            }
-
         function generateTabContent(tabID, state, district = null) {
             let content = '';
             switch (tabID) {
@@ -489,11 +477,8 @@
                 <p>Network information will be displayed here.</p>
             `;
 
-            // Reset Ideology tab content
-            document.getElementById("ideology-container").innerHTML = `
-                <h2>Ideology</h2>
-                <p>Ideology information will be displayed here.</p>
-            `;
+            // Reinitialize the chart
+            setTimeout(() => initializeIdeologyChart(), 0); // Delay chart initialization
 
             // Show the "General" tab by default
             showTab('general');
@@ -503,7 +488,7 @@
         function updateTabContent(state, district = null) {
             document.getElementById("general-container").innerHTML = generateTabContent('general', state, district);
             document.getElementById("network-container").innerHTML = generateTabContent('network', state, district);
-            document.getElementById("ideology-container").innerHTML = generateTabContent('ideology', state, district);
+            setTimeout(() => initializeIdeologyChart(), 0);
         }
 
         function updateButtonVisibility(showBackToNational, showBackToState) {

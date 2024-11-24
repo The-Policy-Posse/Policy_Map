@@ -195,7 +195,7 @@
                 .on("click", stateClicked)
                 .on("mouseover", function(event, d) {
                     const baseColor = partyColors[d.properties.STATE_PARTY] || "#ccc";
-                    d3.select(this).attr("fill", darkenColor(baseColor, -50));
+                    d3.select(this).attr("fill", darkenColor(baseColor, -30));
                     tooltip.style("visibility", "visible")
                         .text(d.properties.NAME);
                 })
@@ -218,7 +218,7 @@
                 .style("fill", d => {
                     const party = d.properties.PARTY;
                     const baseColor = partyColors[party] || "#ccc";
-                    return darkenColor(baseColor, -50);
+                    return darkenColor(baseColor, -30);
                 })
                 .style("display", "none")
                 .attr("cursor", "pointer")
@@ -229,7 +229,7 @@
                 })
                 .on("mouseover", function(event, d) {
                     const baseColor = d3.select(this).style("fill");
-                    const hoverColor = darkenColor(baseColor, -70);
+                    const hoverColor = darkenColor(baseColor, -50);
                     d3.select(this).attr("fill", hoverColor);
                 })
                 .on("mouseout", function(event, d) {
@@ -273,7 +273,6 @@
                             districtClicked(event, districtData, lastSelectedState);
                         })
                         .on("mouseover", function(event, districtData) {
-                            d3.select(this).attr("fill", "#2c7fb8");
                             const officeID = districtData.properties.OFFICE_ID;
                             const repName = districtData.properties.LISTING_NAME;
                             const stateAbbr = officeID.slice(0, 2);
@@ -331,12 +330,6 @@
                     .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
                 d3.pointer(event, svg.node())
             );
-
-            // Darken the district color
-            const districtElement = d3.select(event.target);
-            const baseColor = districtElement.attr("fill") || "#ccc";
-            const darkerColor = darkenColor(baseColor, -40);
-            districtElement.attr("fill", darkerColor);
 
             // Update button visibility
             updateButtonVisibility(false, true);
