@@ -298,3 +298,63 @@ body {
     font-size: 14px;
     font-weight: bold;
 }
+
+
+/*////////////////////////////////////////////////////////*/
+/* Radar Chart Styles */
+.radarChart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.title-container {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#controls label {
+    margin: 0 10px;
+}
+
+.toggle-controls {
+    margin-right: 20px;
+}
+
+#member-details {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.axisLabel {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.tooltip {
+    font-size: 12px;
+    fill: #333;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+/* Legend Styles */
+.legend {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.legend rect {
+    stroke-width: 2;
+    stroke: black;
+}
