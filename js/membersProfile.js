@@ -77,18 +77,31 @@ function showModalForState(state, district = null) {
     // Generate individual member profile divs
     const memberProfiles = filteredMembers.map(member => `
         <div class="member-profile">
-            <img class="profile-image" src="${member.imageURL}" alt="${member.name}'s profile image">
-            <div class="member-info">
-                <strong>Name: ${member.name}</strong>
-                Party: ${member.party}<br>
-                Chamber: ${member.chamber}<br>
+            <div class="profile-left">
+                <img class="profile-image" src="${member.image_url}" alt="${member.name}'s profile image">
+                <div class="member-info">
+                    <span><strong>Name:</strong> ${member.name}<span><br>
+                    <span><strong>Party:</strong> ${member.party}<span><br>
+                    <span><strong>Chamber:</strong> ${member.chamber}<span><br>
+                    ${
+                        member.chamber === "House of Representatives"
+                            ? `<span><strong>District:</strong> ${parseInt(member.district, 10)}<span><br>`
+                            : ""
+                    }
+                    <span><strong>Active:</strong> ${member.start_year} - Present<span><br>
+                    <span><strong>Bills Sponsored:</strong> ${member.sponsored_bills}<span><br>
+                    <span><strong>Bills Cosponsored:</strong> ${member.cosponsored_bills}<span><br>
+                </div>
+            </div>
+            <div class="profile-right">
+                <span><strong>Address:</strong> ${member.address}<span><br>
+                <span><strong>Phone:</strong> ${member.phone_number}<span><br>
+                <span><strong>Website:</strong> <a href="${member.website_url}" target="_blank">${member.website_url}</a><span>
                 ${
                     member.chamber === "House of Representatives"
-                        ? `District: ${parseInt(member.district, 10)}<br>`
+                        ? `<span><strong>Committee Assignments:</strong> ${member.committee_assignment}<span>`
                         : ""
                 }
-                Active: ${member.startYear} - Present<br>
-                <a href="${member.profileURL}" target="_blank">Website</a>
             </div>
         </div>
     `).join('');

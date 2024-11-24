@@ -167,55 +167,56 @@ header {
 .member-profile {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
-    padding: 12px;
+    flex-wrap: nowrap;
+    flex-direction: row; 
+    padding: 10px;
     border: 1px solid #ddd;
     border-radius: 8px;
     background-color: #f9f9f9;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
     width: 100%;
-}
-
-.member-profile:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .profile-image {
     width: 50px;
-    height: 70px;
-    border-radius: 0;
-    margin-right: 15px;
+    height: auto;
+    border-radius: 4px;
+    margin-right: 20px;
     object-fit: cover;
 }
 
 .member-info {
-    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    font-size: 13px;
+    line-height: 1.2;
 }
 
-.member-info strong {
-    font-size: 14px;
-    color: #333;
-    margin-bottom: 4px;
-    display: block;
+.profile-left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex: 50%;
+}
+
+.profile-right {
+    flex: 50%;
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.2;
 }
 
 .member-info a {
     color: #007bff;
     text-decoration: none;
-    font-size: 12px;
+    font-size: 8px;
 }
 
 .member-info a:hover {
     text-decoration: underline;
-}
-
-.member-info span {
-    display: block;
-    color: #555;
-    font-size: 12px;
 }
 
 .button-container {
