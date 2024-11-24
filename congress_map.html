@@ -72,7 +72,7 @@
 
         // Tooltip setup
         const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip");
+            .attr("class", "tooltip-1");
 
         // Define global variables
         let stateBounds = null;
@@ -272,7 +272,7 @@
                         .on("click", function(event) {
                             districtClicked(event, districtData, lastSelectedState);
                         })
-                        .on("mouseover", function() {
+                        .on("mouseover", function(event, districtData) {
                             d3.select(this).attr("fill", "#2c7fb8");
                             const officeID = districtData.properties.OFFICE_ID;
                             const repName = districtData.properties.LISTING_NAME;
@@ -285,7 +285,7 @@
                             tooltip.style("top", (event.pageY - 10) + "px")
                                 .style("left", (event.pageX + 10) + "px");
                         })
-                        .on("mouseout", function() {
+                        .on("mouseout", function(event, districtData) {
                             const partyColors = {"R": "#ff4d4d", "D": "#4d79ff"};
                             const party = districtData.properties.PARTY;
                             const originalColor = partyColors[party] || "#ccc";
