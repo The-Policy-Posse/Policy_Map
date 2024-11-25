@@ -91,5 +91,5 @@ app.get("/api/congress_members", async (req, res) => {
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-    console.log(`Backend server running on http://localhost:${port}`);
+    console.log(`Backend server running on https://backend-server-304538040372.us-central1.run.app:${port}`);
 });
