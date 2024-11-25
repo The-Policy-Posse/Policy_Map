@@ -488,7 +488,6 @@
                     setTimeout(() => initializeNetworkChart(), 0);
                     break;
                 case 'ideology':
-                    setTimeout(() => initializeIdeologyChart(), 0);
                     break;
                 default: 
                     console.error(`Tab with ID '${tabID}' not found.`);
@@ -836,7 +835,7 @@
                     .attr("width", containerWidth)
                     .attr("height", containerHeight)
                     .html('') // Clear any existing content
-                  .append("g")
+                    .append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
 
                 // Create tooltip
