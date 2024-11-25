@@ -76,11 +76,11 @@ function showModalForState(state, district = null) {
 
     // Generate individual member profile divs
     const memberProfiles = filteredMembers.map(member => `
-        <div class="member-profile">
+        <div class="member-profile" id="member-profile-${member.name}" data-name-id="${member.name}">
             <div class="profile-left">
                 <img class="profile-image" src="${member.image_url}" alt="${member.name}'s profile image">
                 <div class="member-info">
-                    <span><strong>Name:</strong> ${member.name}<span><br>
+                    <span><strong>Name:</strong> <span class="member-name" data-name-id="${member.name}">${member.name}<span><br>
                     <span><strong>Party:</strong> ${member.party}<span><br>
                     <span><strong>Chamber:</strong> ${member.chamber}<span><br>
                     ${

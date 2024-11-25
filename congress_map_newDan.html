@@ -211,14 +211,6 @@
                 "D": "#4d79ff",
             };
 
-            const bounds = path.bounds(states.features.find(d => d.properties.NAME === "Kentucky"));
-            console.log("Kentucky bounds:", bounds);
-            console.log("SVG viewBox:", svg.attr("viewBox"));
-
-            const kentuckyPath = path(states.features.find(d => d.properties.NAME === "Kentucky"));
-            console.log("Kentucky path:", kentuckyPath);
-
-
             // Draw states
             const statePaths = g.selectAll(".state")
                 .data(states.features)
@@ -375,10 +367,13 @@
 
 ////////////////////////////////////////////////////////////// New Section ///////////////////////////////////////////
             // Assuming d.properties.LISTING_NAME contains the member's full name
-            const memberName = d.properties.LISTING_NAME.trim();
+            console.log("Name:", d.properties.LISTING_NAME);
+            const memberName = d.properties.LISTING_NAME;
+            console.log("Member Name:", memberName);
 
             // Find the member in the congressMembersData
-            const member = window.congressMembersData.find(m => m.name.trim() === memberName);
+            const member = window.congressMembersData.find(m => m.name === memberName);
+            console.log("Found Mmber:", member);
 
             if (member) {
                 // Store the currently selected member's bioguide_id globally
@@ -452,10 +447,9 @@
                     setTimeout(() => initializeNetworkChart(), 0);
                 } else if (tabID === 'ideology') {
                     setTimeout(() => initializeIdeologyChart(), 0);
-                } else if (currentViewLevel === "state" && lastSelectedState) {
-                } else if (currentViewLevel === "state" && lastSelectedState) {
+                } else if (currentViewLevel === 'state' && lastSelectedState) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState);
-                } else if (currentViewLevel === "district" && lastSelectedState && lastSelectedDistrict) {
+                } else if (currentViewLevel === 'district' && lastSelectedState && lastSelectedDistrict) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState, lastSelectedDistrict);
                 } else {
                     // Default content for when no state or district is selected
@@ -489,38 +483,17 @@
                         <p>Here are the ${district ? 'elected officials and general information for District ' + district : 'Senators and general information for ' + state}.</p>
                         ${showModalForState(state, district)}
                     `;
-                    if (state) {
-                        showModalForState(state, district);
-                    }
                     break;
                 case 'network':
-                    content = `
-                        <h2>${state} - ${district ? `District ${district}` : 'Network'} Information</h2>
-                    `;
-                    generateNetworkInfo(state, district);
+                    setTimeout(() => initializeNetworkChart(), 0);
                     break;
                 case 'ideology':
-                    content = `
-                        <h2>${state} - ${district ? `District ${district}` : 'Ideology'} Information</h2>
-                    `;
-                    generateIdeologyInfo(state, district);
+                    setTimeout(() => initializeIdeologyChart(), 0);
                     break;
                 default: 
                     console.error(`Tab with ID '${tabID}' not found.`);
             }
             return content;
-        }
-
-        // Function to get network information
-        function generateNetworkInfo(stateName, districtNum = null) {
-            // Mock network information
-            return `<p>Network information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
-        }
-
-        // Function to get ideology information
-        function generateIdeologyInfo(stateName, districtNum = null) {
-            // Mock ideology information
-            return `<p>Ideology information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
         }
 
         // Function to reset tabs
@@ -549,6 +522,7 @@
 
         function updateTabContent(state, district = null) {
             document.getElementById("general-container").innerHTML = showModalForState(state, district);
+            setTimeout(addEventListersForMembers, 0);
             setTimeout(() => initializeIdeologyChart(), 0);
             setTimeout(() => initializeNetworkChart(), 0);
         }
@@ -556,6 +530,21 @@
         function updateButtonVisibility(showBackToNational, showBackToState) {
             document.getElementById("backToNationalView").style.display = showBackToNational ? "block" : "none";
             document.getElementById("backToStateView").style.display = showBackToState ? "block" : "none"; 
+        }
+
+        function addEventListersForMembers() {
+            const memberNames = document.querySelectorAll('.member-profile');
+            memberNames.forEach(nameElement => {
+                nameElement.addEventListener("click", function() {
+                    const memberName = this.getAttribute('data-name-id');
+                    const member = window.congressMembersData.find(m => m.name === memberName);
+                    if (member) {
+                        window.currentSelectedBioguideId = member.bioguide_id;
+                        window.updateRadarChart(member.bioguide_id);
+                        showTab('network');
+                    }
+                });
+            });
         }
 
         ///////////////////////////////////////////////////////////
@@ -725,10 +714,10 @@
                 d3.select("#controls").style("display", "none");
 
                 // Function to update the radar chart and member details
-                function updateChart(selectedBioguideId) {
-                    const member = window.congressMembersData.find(d => d.bioguide_id === selectedBioguideId);
+                function updateChart(bioguideId) {
+                    const member = window.congressMembersData.find(d => d.bioguide_id === bioguideId);
                     if (!member) {
-                        console.error(`Member with bioguide_id "${selectedBioguideId}" not found.`);
+                        console.error(`Member with bioguide_id "${bioguideId}" not found.`);
                         return;
                     }
                     
