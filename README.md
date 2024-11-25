@@ -32,9 +32,10 @@ Ensure you have the following installed:
    ```
 3. Create and activate the Conda environment using the provided environment.yml file:
    ```bash
-   conda env create -f environment.yml
+   conda env create -f environment.yml (environment_windows.yml for windows)
    conda activate policy-map
    ```
+
 
 ## How to Use
 
@@ -45,12 +46,11 @@ Ensure you have the following installed:
 
 
 
-###### Dan notes 11/21 11:51 EST
+###### Dan notes 11/25 11:51 EST
 
 - Launch Conda Prompt
 - Create environment with .yml for OS of choice
 - Activate policy-map environment
-- Launch backend server /js/backendServer.js  with node backendServer.js
-- Seperate Prompt; once backend server is running
 - Run python -m http.server 8000 in conda 
-- Navigate to http://localhost:8000/congress_map.html in browser
+- Navigate to http://localhost:8000/congress_map.html in browser for the map and chart
+- Navigate to http://localhost:8000/radarChartLaunch.html for just the Radar Chart

@@ -9,6 +9,8 @@
     <script src="libs/d3-geo-projection.v2.min.js"></script>
     <script src="libs/d3-force.v3.min.js"></script>
     <script src="js/membersProfile.js"></script>
+
+    <script src="js/radarChart.js"></script>
 </head>
 <body>
     <div class="layout-container">
@@ -48,10 +50,36 @@
                     <p>Select a State from the Map, or click on one of the Tabs to get started.</p>
                 </div>
 
+
                 <!-- Network tab container -->
-                 <div id="network-container" class="tab-container" style="display: none;">
-                    <h2>Network</h2>
-                    <p>Network information will be displayed here.</p>
+                <div id="network-container" class="tab-container" style="display: none;">
+                    <div class="title-container">
+                        <h2>Congress Members Radar Chart</h2>
+                    </div>
+
+                    <div id="controls">
+                        <div class="toggle-controls">
+                            <label>
+                                <input type="radio" name="proportion-toggle" value="self">
+                                Self Proportion
+                            </label>
+                            <label>
+                                <input type="radio" name="proportion-toggle" value="across_all" checked>
+                                Across All Proportion
+                            </label>
+                        </div>
+                        <label for="member-select">Select Member: </label>
+                        <select id="member-select"></select>
+                    </div>
+
+                    <div id="member-details"></div>
+
+                    <div class="radarChart"></div>
+
+                    <!-- Legend Container -->
+                    <div id="legend-container" style="text-align: center; margin-top: 10px;">
+                        <svg width="200" height="50"></svg>
+                    </div>
                 </div>
                 
                 <!-- Ideology tab container -->
@@ -182,14 +210,6 @@
                 "R": "#ff4d4d",
                 "D": "#4d79ff",
             };
-
-            const bounds = path.bounds(states.features.find(d => d.properties.NAME === "Kentucky"));
-            console.log("Kentucky bounds:", bounds);
-            console.log("SVG viewBox:", svg.attr("viewBox"));
-
-            const kentuckyPath = path(states.features.find(d => d.properties.NAME === "Kentucky"));
-            console.log("Kentucky path:", kentuckyPath);
-
 
             // Draw states
             const statePaths = g.selectAll(".state")
@@ -344,6 +364,31 @@
             // Update button visibility
             updateButtonVisibility(false, true);
             showTab('general');
+
+////////////////////////////////////////////////////////////// New Section ///////////////////////////////////////////
+            // Assuming d.properties.LISTING_NAME contains the member's full name
+            console.log("Name:", d.properties.LISTING_NAME);
+            const memberName = d.properties.LISTING_NAME;
+            console.log("Member Name:", memberName);
+
+            // Find the member in the congressMembersData
+            const member = window.congressMembersData.find(m => m.name === memberName);
+            console.log("Found Mmber:", member);
+
+            if (member) {
+                // Store the currently selected member's bioguide_id globally
+                window.currentSelectedBioguideId = member.bioguide_id;
+
+                // Update the radar chart with the selected member
+                window.updateRadarChart(member.bioguide_id);
+
+                // Switch to the 'network' tab to display the radar chart
+                showTab('network');
+            } else {
+                console.error(`Member with name "${memberName}" not found in data.`);
+            }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         }
 
         // Function to handle zoom transformation
@@ -398,11 +443,13 @@
                 tabContainer.style.display = 'block';
 
                 // Dynamically update content based on the current view level
-                if (tabID === 'ideology') {
+                if (tabID === 'network') {
+                    setTimeout(() => initializeNetworkChart(), 0);
+                } else if (tabID === 'ideology') {
                     setTimeout(() => initializeIdeologyChart(), 0);
-                } else if (currentViewLevel === "state" && lastSelectedState) {
+                } else if (currentViewLevel === 'state' && lastSelectedState) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState);
-                } else if (currentViewLevel === "district" && lastSelectedState && lastSelectedDistrict) {
+                } else if (currentViewLevel === 'district' && lastSelectedState && lastSelectedDistrict) {
                     tabContainer.innerHTML = generateTabContent(tabID, lastSelectedState, lastSelectedDistrict);
                 } else {
                     // Default content for when no state or district is selected
@@ -436,38 +483,16 @@
                         <p>Here are the ${district ? 'elected officials and general information for District ' + district : 'Senators and general information for ' + state}.</p>
                         ${showModalForState(state, district)}
                     `;
-                    if (state) {
-                        showModalForState(state, district);
-                    }
                     break;
                 case 'network':
-                    content = `
-                        <h2>${state} - ${district ? `District ${district}` : 'Network'} Information</h2>
-                    `;
-                    generateNetworkInfo(state, district);
+                    setTimeout(() => initializeNetworkChart(), 0);
                     break;
                 case 'ideology':
-                    content = `
-                        <h2>${state} - ${district ? `District ${district}` : 'Ideology'} Information</h2>
-                    `;
-                    generateIdeologyInfo(state, district);
                     break;
                 default: 
                     console.error(`Tab with ID '${tabID}' not found.`);
             }
             return content;
-        }
-
-        // Function to get network information
-        function generateNetworkInfo(stateName, districtNum = null) {
-            // Mock network information
-            return `<p>Network information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
-        }
-
-        // Function to get ideology information
-        function generateIdeologyInfo(stateName, districtNum = null) {
-            // Mock ideology information
-            return `<p>Ideology information for ${stateName}${districtNum ? ', District ' + districtNum : ' will be displayed here'}.</p>`;
         }
 
         // Function to reset tabs
@@ -484,10 +509,7 @@
             `;
 
             // Reset Network tab content
-            document.getElementById("network-container").innerHTML = `
-                <h2>Network</h2>
-                <p>Network information will be displayed here.</p>
-            `;
+            setTimeout(() => initializeNetworkChart(), 0);
 
             // Reset Ideology tab content
             setTimeout(() => initializeIdeologyChart(), 0);
@@ -499,8 +521,9 @@
 
         function updateTabContent(state, district = null) {
             document.getElementById("general-container").innerHTML = showModalForState(state, district);
-            document.getElementById("network-container").innerHTML = generateNetworkInfo(state);
+            setTimeout(addEventListersForMembers, 0);
             setTimeout(() => initializeIdeologyChart(), 0);
+            setTimeout(() => initializeNetworkChart(), 0);
         }
 
         function updateButtonVisibility(showBackToNational, showBackToState) {
@@ -508,8 +531,288 @@
             document.getElementById("backToStateView").style.display = showBackToState ? "block" : "none"; 
         }
 
+        function addEventListersForMembers() {
+            const memberNames = document.querySelectorAll('.member-profile');
+            memberNames.forEach(nameElement => {
+                nameElement.addEventListener("click", function() {
+                    const memberName = this.getAttribute('data-name-id');
+                    const member = window.congressMembersData.find(m => m.name === memberName);
+                    if (member) {
+                        window.currentSelectedBioguideId = member.bioguide_id;
+                        window.updateRadarChart(member.bioguide_id);
+                        showTab('network');
+                    }
+                });
+            });
+        }
+
         ///////////////////////////////////////////////////////////
-        ///////// Dan Test Chart /////////////////////
+        ///////// Dan Test Charts /////////////////////
+        ///////////////////////////////////////////////////////////
+
+
+        // Global variable to store congress members data
+        window.congressMembersData = [];
+
+
+        // Function to initialize the D3 chart in the Network tab
+        function initializeNetworkChart() {
+            // Check if the chart has already been initialized to avoid re-initializing
+            if (!initializeNetworkChart.initialized) {
+                initializeNetworkChart.initialized = true; // Set a flag to prevent re-initialization
+
+        // Define chamber-specific scaling factors
+        const SCALING_FACTORS = {
+                'Senate': 2,                      // No scaling for Senate
+                'House of Representatives': 5     // Scaling factor for House (adjust as needed)
+            };
+
+            // Define the policy areas with exact column names
+            const policyAreas = [
+                {
+                    display: "Agriculture and Food",
+                    member_self: "Agriculture_and_Food_self_proportion",
+                    member_across_all: "Agriculture_and_Food_across_all_proportion",
+                    state_self: "Agriculture_And_Food_state_self_proportion",
+                    state_national: "Agriculture_And_Food_state_national_proportion"
+                },
+                {
+                    display: "Crime and Law Enforcement",
+                    member_self: "Crime_and_Law_Enforcement_self_proportion",
+                    member_across_all: "Crime_and_Law_Enforcement_across_all_proportion",
+                    state_self: "Crime_And_Law_Enforcement_state_self_proportion",
+                    state_national: "Crime_And_Law_Enforcement_state_national_proportion"
+                },
+                {
+                    display: "Culture and Recreation",
+                    member_self: "Culture_and_Recreation_self_proportion",
+                    member_across_all: "Culture_and_Recreation_across_all_proportion",
+                    state_self: "Culture_And_Recreation_state_self_proportion",
+                    state_national: "Culture_And_Recreation_state_national_proportion"
+                },
+                {
+                    display: "Economy and Finance",
+                    member_self: "Economy_and_Finance_self_proportion",
+                    member_across_all: "Economy_and_Finance_across_all_proportion",
+                    state_self: "Economy_And_Finance_state_self_proportion",
+                    state_national: "Economy_And_Finance_state_national_proportion"
+                },
+                {
+                    display: "Education and Social Services",
+                    member_self: "Education_and_Social_Services_self_proportion",
+                    member_across_all: "Education_and_Social_Services_across_all_proportion",
+                    state_self: "Education_And_Social_Services_state_self_proportion",
+                    state_national: "Education_And_Social_Services_state_national_proportion"
+                },
+                {
+                    display: "Environment and Natural Resources",
+                    member_self: "Environment_and_Natural_Resources_self_proportion",
+                    member_across_all: "Environment_and_Natural_Resources_across_all_proportion",
+                    state_self: "Environment_And_Natural_Resources_state_self_proportion",
+                    state_national: "Environment_And_Natural_Resources_state_national_proportion"
+                },
+                {
+                    display: "Government Operations and Politics",
+                    member_self: "Government_Operations_and_Politics_self_proportion",
+                    member_across_all: "Government_Operations_and_Politics_across_all_proportion",
+                    state_self: "Government_Operations_And_Politics_state_self_proportion",
+                    state_national: "Government_Operations_And_Politics_state_national_proportion"
+                },
+                {
+                    display: "Health and Healthcare",
+                    member_self: "Health_and_Healthcare_self_proportion",
+                    member_across_all: "Health_and_Healthcare_across_all_proportion",
+                    state_self: "Health_And_Healthcare_state_self_proportion",
+                    state_national: "Health_And_Healthcare_state_national_proportion"
+                },
+                {
+                    display: "Immigration and Civil Rights",
+                    member_self: "Immigration_and_Civil_Rights_self_proportion",
+                    member_across_all: "Immigration_and_Civil_Rights_across_all_proportion",
+                    state_self: "Immigration_And_Civil_Rights_state_self_proportion",
+                    state_national: "Immigration_And_Civil_Rights_state_national_proportion"
+                },
+                {
+                    display: "National Security and International Affairs",
+                    member_self: "National_Security_and_International_Affairs_self_proportion",
+                    member_across_all: "National_Security_and_International_Affairs_across_all_proportion",
+                    state_self: "National_Security_And_International_Affairs_state_self_proportion",
+                    state_national: "National_Security_And_International_Affairs_state_national_proportion"
+                },
+                {
+                    display: "Science, Technology and Communications",
+                    member_self: "Science__Technology__and_Communications_self_proportion", // Note double underscores
+                    member_across_all: "Science__Technology__and_Communications_across_all_proportion",
+                    state_self: "Science_Technology_And_Communications_state_self_proportion",
+                    state_national: "Science_Technology_And_Communications_state_national_proportion" // Corrected mapping
+                },
+                {
+                    display: "Transportation and Infrastructure",
+                    member_self: "Transportation_and_Infrastructure_self_proportion",
+                    member_across_all: "Transportation_and_Infrastructure_across_all_proportion",
+                    state_self: "Transportation_And_Infrastructure_state_self_proportion",
+                    state_national: "Transportation_And_Infrastructure_state_national_proportion"
+                }
+            ];
+
+            // Set up dimensions and margins
+            const margin = {top: 80, right: 100, bottom: 80, left: 100},
+                width = Math.min(570, window.innerWidth - 10) - margin.left - margin.right,
+                height = Math.min(width, window.innerHeight - margin.top - margin.bottom - 20);
+            
+                const radarChartOptions = {
+                    w: width,
+                    h: height,
+                    margin: margin,
+                    levels: 5,
+                    labelFactor: 1.2,
+                    roundStrokes: true,
+                    color: d3.scaleOrdinal(d3.schemeCategory10),
+                    transitionDuration: 750,
+                    opacityArea: 0.35,     // Opacity of the area of the blob
+                    wrapWidth: 2          // The number of pixels after which a label needs to be given a new line
+                };
+            
+            let radarChartInstance = null;
+            let currentProportionType = 'across_all'; // Default proportion type
+            
+            // Function to transform member data into radar chart format
+            function getRadarDatasets(member, proportionType) {
+                const datasets = [[], []]; // datasets[0] = Congress Member, datasets[1] = State Proportion
+
+                policyAreas.forEach(policy => {
+                    // Congress Member's Proportion
+                    const memberField = proportionType === 'self' ? policy.member_self : policy.member_across_all;
+                    let memberValue = parseFloat(member[memberField]) || 0;
+                    datasets[0].push({ axis: policy.display, value: memberValue });
+
+                    // State Proportion
+                    const stateField = proportionType === 'self' ? policy.state_self : policy.state_national;
+                    let stateValue = parseFloat(member[stateField]) || 0;
+                    datasets[1].push({ axis: policy.display, value: stateValue });
+                });
+
+                // Assign index properties to each dataset for color mapping
+                datasets[0].index = 0; // Congress Member
+                datasets[1].index = 1; // State Proportion
+
+                // Apply chamber-specific scaling factor for "Across All Proportion"
+                if (proportionType === 'across_all') {
+                    const scalingFactor = SCALING_FACTORS[member.chamber] || 1; // Default to 1 if chamber not found
+                    datasets[0] = datasets[0].map(d => ({ axis: d.axis, value: d.value * scalingFactor }));
+                    // Reassign the index property after scaling to preserve color mapping
+                    datasets[0].index = 0;
+                }
+
+                return datasets;
+            }
+            
+            // Load CSV data using D3 v6 Promise-based approach
+            d3.csv("congress_members_with_proportions.csv").then(function(data) {
+                // Store data globally
+                window.congressMembersData = data;
+
+                // Optionally, hide or remove the dropdown since selection is via the map
+                d3.select("#controls").style("display", "none");
+
+                // Function to update the radar chart and member details
+                function updateChart(bioguideId) {
+                    const member = window.congressMembersData.find(d => d.bioguide_id === bioguideId);
+                    if (!member) {
+                        console.error(`Member with bioguide_id "${bioguideId}" not found.`);
+                        return;
+                    }
+                    
+                    const radarDatasets = getRadarDatasets(member, currentProportionType);
+                    
+                    if (!radarChartInstance) {
+                        // Initialize the radar chart if not already done
+                        RadarChart(".radarChart", radarDatasets, radarChartOptions);
+                        radarChartInstance = true;
+                    } else {
+                        // Update the radar chart with new data
+                        RadarChart.update(radarDatasets);
+                    }
+                    
+                    // Update member details
+                    const details = d3.select("#member-details");
+                    details.html(
+                        `<strong>Name:</strong> ${member.name}<br/>
+                        <strong>State:</strong> ${member.state}<br/>
+                        ${
+                            member.chamber === "House of Representatives"
+                            ? `<strong>District:</strong> ${parseInt(member.district, 10)}<br>`
+                            : ""
+                    }
+                        <strong>Chamber:</strong> ${member.chamber}`
+                    );
+                    
+                    // Update the legend
+                    updateLegend();
+                }
+                
+                // Expose the updateChart function globally
+                window.updateRadarChart = updateChart;
+
+                // Initialize with the first member (optional)
+                if (data.length > 0) {
+                    const initialBioguideId = data[0].bioguide_id;
+                    updateChart(initialBioguideId);
+                }
+                
+                // Handle proportion type toggle
+                d3.selectAll('input[name="proportion-toggle"]').on("change", function() {
+                    const selectedType = d3.select('input[name="proportion-toggle"]:checked').node().value;
+                    currentProportionType = selectedType;
+                    
+                    // Update the currently selected member's radar chart
+                    // Assuming you have a variable to store the currently selected bioguide_id
+                    if (window.currentSelectedBioguideId) {
+                        updateChart(window.currentSelectedBioguideId);
+                    }
+                });
+            }).catch(function(error){
+                console.error("Error loading CSV data:", error);
+            });
+
+            // Function to create/update the legend
+            function updateLegend() {
+                const legendData = [
+                    { name: "Congress Member", color: radarChartOptions.color(0) },
+                    { name: "State Proportion", color: radarChartOptions.color(1) }
+                ];
+                
+                const legendSvg = d3.select("#legend-container").select("svg");
+                legendSvg.selectAll("*").remove(); // Clear existing legend
+                
+                const legend = legendSvg.selectAll(".legend")
+                    .data(legendData)
+                    .enter()
+                    .append("g")
+                    .attr("class", "legend")
+                    .attr("transform", (d, i) => `translate(10, ${i * 20 + 10})`);
+                
+                legend.append("rect")
+                    .attr("x", 0)
+                    .attr("y", 0)
+                    .attr("width", 18)
+                    .attr("height", 18)
+                    .style("fill", d => d.color)
+                    .style("stroke", "black");
+                
+                legend.append("text")
+                    .attr("x", 25)
+                    .attr("y", 14)
+                    .text(d => d.name);
+            }
+        }
+    }
+
+
+
+
+        ///////////////////////////////////////////////////////////
+        ///////// Dan Test Charts 2/////////////////////
         ///////////////////////////////////////////////////////////
 
 
@@ -535,7 +838,7 @@
                     .attr("width", containerWidth)
                     .attr("height", containerHeight)
                     .html('') // Clear any existing content
-                  .append("g")
+                    .append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
 
                 // Create tooltip

@@ -1,8 +1,7 @@
 /////////////////////////////////////////////////////////
 // The Radar Chart Function
-// Orig by Nadieh Bremer - VisualCinnamon.com
+// Written by Nadieh Bremer - VisualCinnamon.com
 // Inspired by the code of alangrafu
-// Infused by Daniel Forcade
 ///////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////
@@ -18,7 +17,7 @@ function RadarChart(id, data, options = {}) {
         levels: 5,             // Number of concentric circles
         maxValue: 0,           // Will be dynamically set based on data
         labelFactor: 1.2,      // Adjusted labelFactor to prevent labels from being cut off
-        wrapWidth: 1,         // The number of pixels after which a label needs to be given a new line
+        wrapWidth: 60,         // The number of pixels after which a label needs to be given a new line
         opacityArea: 0.35,     // Opacity of the area of the blob
         dotRadius: 4,          // Radius of the circles representing data points
         opacityCircles: 0.1,   // Opacity of the concentric circles
