@@ -737,7 +737,11 @@
                     details.html(
                         `<strong>Name:</strong> ${member.name}<br/>
                         <strong>State:</strong> ${member.state}<br/>
-                        <strong>District:</strong> ${member.district ? member.district : "N/A"}<br/>
+                        ${
+                            member.chamber === "House of Representatives"
+                            ? `<strong>District:</strong> ${parseInt(member.district, 10)}<br>`
+                            : ""
+                    }
                         <strong>Chamber:</strong> ${member.chamber}`
                     );
                     
