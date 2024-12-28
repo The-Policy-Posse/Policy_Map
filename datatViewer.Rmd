@@ -1,0 +1,593 @@
+---
+title: "radarChart_DatatView"
+author: "dcf"
+date: "2024-12-22"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)            # For data manipulation
+library(tidyr)            # For splitting topic strings into multiple rows
+library(ggplot2)          # For plotting
+library(stringr)          # For string operations
+library(rcompanion)       # For pairwise nominal tests (optional post-hoc)
+library(scales)           # For percentage formatting in plots
+library(rcompanion)
+library(pheatmap)
+library(ggrepel)
+library(scatterplot3d)
+library(car)
+library(rgl)
+```
+
+
+```{r dataLoad}
+
+myData <- read.csv('combined_data.csv')
+
+```
+
+
+```{r stats}
+
+# Step 1: Clean and Parse Labels
+expanded_data <- myData %>%
+  mutate(assigned_label_clean = gsub("\\[|\\]|'", "", assigned_label)) %>%
+  separate_rows(assigned_label_clean, sep = ",") %>%
+  mutate(assigned_label_clean = str_trim(assigned_label_clean)) %>%
+  rename(label = assigned_label_clean)
+
+# (Re-drop factor levels if label got changed)
+# Not strictly necessary unless 'label' is also a factor
+# expanded_data$label <- as.factor(expanded_data$label)
+# expanded_data$label <- droplevels(expanded_data$label)
+
+# Step 2: Summarize Data for Visualization (optional example)
+summary_data <- expanded_data %>%
+  group_by(state, label) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Step 3: Create Contingency Table
+contingency_table <- table(expanded_data$state, expanded_data$label)
+
+# Step 4: Heatmap of Label Distributions
+prop_table <- prop.table(contingency_table, margin = 1) # row-wise proportion
+pheatmap(prop_table,
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         display_numbers = TRUE,
+         main = "Heatmap of Label Distributions by State")
+
+# Step 5: Global Chi-Squared Test
+chi_sq_test <- chisq.test(contingency_table)
+cat("\n--- Chi-Squared Test Results ---\n")
+print(chi_sq_test)
+
+# Check expected counts
+if(any(chi_sq_test$expected < 5)) {
+  cat("\nWarning: Some expected counts are less than 5. Consider a Fisher's Exact Test or Permutation Test.\n")
+}
+
+# If you want a single omnibus result:
+overall_chi_sq <- chisq.test(contingency_table)
+print(overall_chi_sq)
+
+if (overall_chi_sq$p.value < 0.05) {
+  cat("Overall Chi-Square is significant, proceeding with post-hoc tests.\n")
+} else {
+  cat("Overall Chi-Square is not significant, no need for post-hoc tests.\n")
+}
+
+# Step 6: Pairwise Post-Hoc Testing (State vs State) using rcompanion
+posthoc_results <- pairwiseNominalIndependence(
+  contingency_table,
+  fisher = FALSE,   # Use Chi-Square for pairwise comparisons
+  chisq  = TRUE,    
+  gtest  = FALSE,   
+  method = "holm"   # adjust p-values for multiple comparisons
+)
+
+cat("\n--- Pairwise Post-Hoc (State vs State) ---\n")
+print(posthoc_results)
+
+# Step 7: State vs. Rest (Fisher’s or Chi-Square) for each state
+test_state_vs_rest <- function(state_name, data) {
+  # Subset for the chosen state
+  state_data <- data[data$state == state_name, ]
+  # Subset for the rest
+  rest_data  <- data[data$state != state_name, ]
+  
+  # Identify all labels present in either group
+  all_labels <- union(unique(state_data$label), unique(rest_data$label))
+  
+  # Create frequency tables with factor(..., levels = all_labels)
+  state_table <- table(factor(state_data$label, levels = all_labels))
+  rest_table  <- table(factor(rest_data$label,  levels = all_labels))
+  
+  # Combine into a 2xN table
+  combined_table <- rbind(state_table, rest_table)
+  rownames(combined_table) <- c(state_name, "Rest")
+  
+  # Debugging checks
+  if (any(is.na(combined_table)) || any(!is.finite(combined_table)) || any(combined_table < 0)) {
+    cat("\nProblem found for state:", state_name, "\n")
+    print(combined_table)
+    stop("combined_table has NA, Inf, or negative values.")
+  }
+  
+  # Fisher's exact test (with simulate.p.value due to large table)
+  res <- fisher.test(combined_table, simulate.p.value = TRUE, B = 1e5)
+  
+  return(res$p.value)
+}
+
+## Character to Factor
+expanded_data$state <- factor(expanded_data$state)
+states <- levels(expanded_data$state)
+
+# If you only want states that actually appear in the data, do:
+# states <- states[sapply(states, function(s) any(expanded_data$state == s))]
+
+p_vals_state_vs_rest <- sapply(states, function(s) test_state_vs_rest(s, expanded_data))
+
+# Correct for multiple comparisons (Holm)
+p_adj <- p.adjust(p_vals_state_vs_rest, method = "holm")
+
+posthoc_state_vs_rest <- data.frame(
+  State          = states,
+  Raw_P_Value    = p_vals_state_vs_rest,
+  Adjusted_P     = p_adj,
+  Significant_05 = p_adj < 0.05
+)
+
+cat("\n--- State vs. Rest Post-Hoc ---\n")
+print(posthoc_state_vs_rest)
+summary(expanded_data$state)
+```
+```{r similarity}
+
+# 1) Convert prop_table (state x label proportions) to matrix
+prop_matrix <- as.matrix(prop_table)
+
+# 2) Compute Euclidean distances between states
+distance_object <- dist(prop_matrix, method = "euclidean")
+distance_matrix <- as.matrix(distance_object)
+
+# 3) For each state, find the 3 nearest neighbors
+closest_matches <- data.frame(
+  State      = rownames(distance_matrix),
+  Match1     = NA_character_,
+  Distance1  = NA_real_,
+  Match2     = NA_character_,
+  Distance2  = NA_real_,
+  Match3     = NA_character_,
+  Distance3  = NA_real_
+)
+
+for (i in seq_len(nrow(distance_matrix))) {
+  sorted_indices <- order(distance_matrix[i, ])
+  # The first one is i itself, skip it
+  neighbors <- sorted_indices[2:4]
+  
+  closest_matches$Match1[i]    <- rownames(distance_matrix)[neighbors[1]]
+  closest_matches$Distance1[i] <- distance_matrix[i, neighbors[1]]
+  
+  closest_matches$Match2[i]    <- rownames(distance_matrix)[neighbors[2]]
+  closest_matches$Distance2[i] <- distance_matrix[i, neighbors[2]]
+  
+  closest_matches$Match3[i]    <- rownames(distance_matrix)[neighbors[3]]
+  closest_matches$Distance3[i] <- distance_matrix[i, neighbors[3]]
+}
+
+# Print the results
+closest_matches
+
+```  
+
+
+```{r similarity plot}
+
+# Convert to numeric matrix (if it's not already)
+prop_matrix <- as.matrix(prop_table)
+
+# Compute Euclidean distance among states
+distance_matrix <- as.matrix(dist(prop_matrix, method = "euclidean"))
+
+#############################################
+# Identify top 3 neighbors for each state
+#############################################
+
+neighbors_list <- data.frame(
+  FromState = character(),
+  ToState   = character(),
+  Dist      = numeric()
+)
+
+for (i in seq_len(nrow(distance_matrix))) {
+  # Sort states by distance from state i
+  sorted_indices <- order(distance_matrix[i, ])
+  # The first index is i itself (distance = 0), so skip it
+  top3 <- sorted_indices[2:4]
+
+  from_name <- rownames(distance_matrix)[i]
+
+  for (j in top3) {
+    to_name <- rownames(distance_matrix)[j]
+    dist_ij <- distance_matrix[i, j]
+
+    neighbors_list <- rbind(
+      neighbors_list,
+      data.frame(
+        FromState = from_name,
+        ToState   = to_name,
+        Dist      = dist_ij
+      )
+    )
+  }
+}
+
+#############################################
+# 2D MDS + GGPlot
+#############################################
+
+# Classical MDS in 2D
+mds_coords_2d <- cmdscale(distance_matrix, k = 2)
+mds_df_2d <- data.frame(
+  State = rownames(distance_matrix),
+  Dim1  = mds_coords_2d[, 1],
+  Dim2  = mds_coords_2d[, 2]
+)
+
+# Build edge data for plotting lines in 2D
+edges_for_plot_2d <- neighbors_list %>%
+  left_join(mds_df_2d, by = c("FromState" = "State")) %>%
+  rename(xFrom = Dim1, yFrom = Dim2) %>%
+  left_join(mds_df_2d, by = c("ToState" = "State")) %>%
+  rename(xTo = Dim1, yTo = Dim2)
+
+# 2D Plot
+ggplot() +
+  geom_segment(
+    data = edges_for_plot_2d,
+    aes(x = xFrom, y = yFrom, xend = xTo, yend = yTo),
+    color = "gray70",
+    alpha = 0.7
+  ) +
+  geom_point(
+    data = mds_df_2d,
+    aes(x = Dim1, y = Dim2),
+    color = "blue",
+    size = 3
+  ) +
+  geom_text_repel(
+    data = mds_df_2d,
+    aes(x = Dim1, y = Dim2, label = State),
+    size = 3
+  ) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "2D MDS - Topic Distribution (with 3 Nearest Neighbors)",
+    x = "Dimension 1",
+    y = "Dimension 2"
+  )
+
+#############################################
+# 3D MDS (STATIC) via scatterplot3d
+#############################################
+
+# Classical MDS in 3D
+mds_coords_3d <- cmdscale(distance_matrix, k = 3)
+mds_df_3d <- data.frame(
+  State = rownames(distance_matrix),
+  X = mds_coords_3d[, 1],
+  Y = mds_coords_3d[, 2],
+  Z = mds_coords_3d[, 3]
+)
+
+# Start the scatterplot3d
+s3d <- scatterplot3d(
+  x = mds_df_3d$X,
+  y = mds_df_3d$Y,
+  z = mds_df_3d$Z,
+  color = "blue",
+  pch = 19,
+  type = "h",
+  main = "3D MDS - Topic Distribution (Static)",
+  xlab = "Dimension 1",
+  ylab = "Dimension 2",
+  zlab = "Dimension 3"
+)
+
+# Convert 3D coords to 2D for text/line segments
+text_coords <- s3d$xyz.convert(mds_df_3d$X, mds_df_3d$Y, mds_df_3d$Z)
+
+# Add labels
+text(
+  text_coords$x,
+  text_coords$y,
+  labels = mds_df_3d$State,
+  pos = 3,  # position above
+  cex = 0.7
+)
+
+# Draw segments from each state to its 3 neighbors
+for (i in seq_len(nrow(neighbors_list))) {
+  from_row <- mds_df_3d[mds_df_3d$State == neighbors_list$FromState[i], ]
+  to_row   <- mds_df_3d[mds_df_3d$State == neighbors_list$ToState[i], ]
+
+  p1_2d <- s3d$xyz.convert(from_row$X, from_row$Y, from_row$Z)
+  p2_2d <- s3d$xyz.convert(to_row$X, to_row$Y, to_row$Z)
+
+  segments(
+    x0 = p1_2d$x, y0 = p1_2d$y,
+    x1 = p2_2d$x, y1 = p2_2d$y,
+    col = "gray70"
+  )
+}
+
+
+
+##############################################
+# 2) Suppose you have a distance_matrix
+#    from your proportion table, e.g.:
+##############################################
+
+# # Example if starting from prop_table:
+# prop_matrix <- as.matrix(prop_table)
+# distance_matrix <- as.matrix(dist(prop_matrix, method = "euclidean"))
+
+# For demonstration here, let's create a dummy distance matrix:
+set.seed(123)
+dummy_data <- matrix(rnorm(40), nrow = 10)  # 10 states, e.g.
+rownames(dummy_data) <- paste("State", 1:10, sep="_")
+distance_matrix <- as.matrix(dist(dummy_data, method = "euclidean"))
+
+##############################################
+# 3) Identify the top 3 neighbors for each state
+##############################################
+neighbors_list <- data.frame(
+  FromState = character(),
+  ToState   = character(),
+  Dist      = numeric()
+)
+
+for (i in seq_len(nrow(distance_matrix))) {
+  # Sort states by distance from state i
+  sorted_indices <- order(distance_matrix[i, ])
+  # The first index is i itself (distance=0), so skip it
+  top3 <- sorted_indices[2:4]
+  
+  from_name <- rownames(distance_matrix)[i]
+  
+  for (j in top3) {
+    to_name <- rownames(distance_matrix)[j]
+    dist_ij <- distance_matrix[i, j]
+    
+    neighbors_list <- rbind(
+      neighbors_list,
+      data.frame(
+        FromState = from_name,
+        ToState   = to_name,
+        Dist      = dist_ij
+      )
+    )
+  }
+}
+
+##############################################
+# 4) Classical MDS in 3 dimensions
+##############################################
+mds_coords_3d <- cmdscale(distance_matrix, k = 3)
+mds_df_3d <- data.frame(
+  State = rownames(distance_matrix),
+  X = mds_coords_3d[, 1],
+  Y = mds_coords_3d[, 2],
+  Z = mds_coords_3d[, 3]
+)
+
+##############################################
+# 5) Plot with scatter3d()
+#    (this opens an rgl device)
+##############################################
+scatter3d(
+  x         = mds_df_3d$X,
+  y         = mds_df_3d$Y,
+  z         = mds_df_3d$Z,
+  labels    = mds_df_3d$State,   # show state names on hover
+  surface   = FALSE,             # no regression plane
+  ellipsoid = FALSE,             # no data ellipsoid
+  grid      = FALSE,             # no grid lines
+  point.col = "blue",            # color of the points
+  sphere.size = 1.2,             # size of points
+  axis.scales = TRUE,            # show axis scales
+  id.method   = "none"           # disable "identify" feature
+)
+
+##############################################
+# 6) Add lines to connect each state to its 3 neighbors
+##############################################
+# Because scatter3d() uses rgl under the hood,
+# we can now call rgl functions like segments3d()
+##############################################
+for (i in seq_len(nrow(neighbors_list))) {
+  from_row <- mds_df_3d[mds_df_3d$State == neighbors_list$FromState[i], ]
+  to_row   <- mds_df_3d[mds_df_3d$State == neighbors_list$ToState[i], ]
+  
+  segments3d(
+    x = c(from_row$X, to_row$X),
+    y = c(from_row$Y, to_row$Y),
+    z = c(from_row$Z, to_row$Z),
+    col = "gray70"
+  )
+}
+
+##############################################
+# Done! Now you have an interactive 3D scatter
+# with lines to each state's 3 nearest neighbors.
+#############################################
+# Open a new 3D device (window)
+open3d()
+
+# Plot points in 3D
+plot3d(
+  x = mds_df_3d$X,
+  y = mds_df_3d$Y,
+  z = mds_df_3d$Z,
+  type = "s",  # 's' for 3D spheres
+  radius = 0.02,
+  col = "blue",
+  xlab = "Dimension 1",
+  ylab = "Dimension 2",
+  zlab = "Dimension 3",
+  main = "3D MDS - Topic Distribution (Interactive, rgl)"
+)
+
+# Add text labels next to each point
+# We can do this by offsetting in X or Y or using text3d()
+for (i in seq_len(nrow(mds_df_3d))) {
+  text3d(
+    mds_df_3d$X[i],
+    mds_df_3d$Y[i],
+    mds_df_3d$Z[i],
+    texts = mds_df_3d$State[i],
+    adj = c(0.5, -1.0),  # vertical offset below the sphere
+    cex = 0.8
+  )
+}
+
+# Now add line segments for each edge
+for (i in seq_len(nrow(neighbors_list))) {
+  from_row <- mds_df_3d[mds_df_3d$State == neighbors_list$FromState[i], ]
+  to_row   <- mds_df_3d[mds_df_3d$State == neighbors_list$ToState[i], ]
+  
+  segments3d(
+    x = c(from_row$X, to_row$X),
+    y = c(from_row$Y, to_row$Y),
+    z = c(from_row$Z, to_row$Z),
+    col = "gray70"
+  )
+}
+
+```
+
+```{r similarity 3d}
+##############################################
+# Full 3D MDS code with plotly
+##############################################
+
+# Load packages
+library(dplyr)
+library(plotly)
+
+# 1) Assume you already have 'prop_table' (row = State, col = Topic),
+#    row sums = 1. We'll compute a Euclidean distance matrix:
+prop_matrix <- as.matrix(prop_table)
+distance_matrix <- as.matrix(dist(prop_matrix, method = "euclidean"))
+
+# 2) Identify each state's 3 nearest neighbors
+neighbors_list <- data.frame(
+  FromState = character(),
+  ToState   = character(),
+  Dist      = numeric()
+)
+
+for (i in seq_len(nrow(distance_matrix))) {
+  # Sort by distance from state i
+  sorted_indices <- order(distance_matrix[i, ])
+  # Skip itself (index i) => pick next 3
+  top3 <- sorted_indices[2:4]
+  
+  from_name <- rownames(distance_matrix)[i]
+  
+  for (j in top3) {
+    to_name <- rownames(distance_matrix)[j]
+    dist_ij <- distance_matrix[i, j]
+    
+    neighbors_list <- rbind(
+      neighbors_list,
+      data.frame(
+        FromState = from_name,
+        ToState   = to_name,
+        Dist      = dist_ij
+      )
+    )
+  }
+}
+
+# 3) Run MDS in 3D
+mds_coords_3d <- cmdscale(distance_matrix, k = 3)
+mds_df_3d <- data.frame(
+  State = rownames(distance_matrix),
+  X = mds_coords_3d[, 1],
+  Y = mds_coords_3d[, 2],
+  Z = mds_coords_3d[, 3]
+)
+
+# 4) Build line data for 3D edges:
+#    We'll create (xFrom, yFrom, zFrom) -> (xTo, yTo, zTo) pairs,
+#    inserting an NA row to "lift the pen" between segments.
+lines_data_3d <- data.frame(
+  x = numeric(0),
+  y = numeric(0),
+  z = numeric(0),
+  group = character(0)
+)
+
+for (i in seq_len(nrow(neighbors_list))) {
+  from_row <- mds_df_3d[mds_df_3d$State == neighbors_list$FromState[i], ]
+  to_row   <- mds_df_3d[mds_df_3d$State == neighbors_list$ToState[i], ]
+  
+  # We'll store 3 rows per edge: (from), (to), (NA)
+  lines_data_3d <- rbind(
+    lines_data_3d,
+    data.frame(
+      x = c(from_row$X, to_row$X, NA),
+      y = c(from_row$Y, to_row$Y, NA),
+      z = c(from_row$Z, to_row$Z, NA),
+      group = neighbors_list$FromState[i] # or paste0(FromState,"->",ToState)
+    )
+  )
+}
+
+# 5) Plot using plotly
+plot_ly() %>%
+  # A) Add points for each state
+  add_trace(
+    data = mds_df_3d,
+    x = ~X, y = ~Y, z = ~Z,
+    type = "scatter3d",
+    mode = "markers+text",
+    marker = list(size = 3, color = "blue"),
+    text = ~State,
+    textposition = "top center",
+    showlegend = FALSE
+  ) %>%
+  # B) Add the line segments
+  add_trace(
+    data = lines_data_3d,
+    x = ~x, y = ~y, z = ~z,
+    type = "scatter3d",
+    mode = "lines",
+    line = list(color = "gray70", width = 2),
+    hoverinfo = "none",
+    showlegend = FALSE,
+    split = ~group   # ensures each group is drawn as a separate line
+  ) %>%
+  layout(
+    title = "3D MDS - Topic Distribution (Plotly)",
+    scene = list(
+      xaxis = list(title = "Dimension 1"),
+      yaxis = list(title = "Dimension 2"),
+      zaxis = list(title = "Dimension 3")
+    )
+  )
+
+
+
+
+
+```
+
+
+
